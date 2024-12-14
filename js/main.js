@@ -61,13 +61,24 @@ document.addEventListener('DOMContentLoaded', function () {
                 return s.trim().length > 0;
             }).length;
 
-            if (sentenceCount < 2) {
+            if (sentenceCount != 2) {
                 event.preventDefault();
                 alert('Bitte geben Sie genau zwei Sätze ein, getrennt durch einen Punkt.');
             }
         });
     }
 
-    // Optional: Weitere interaktive Funktionen können hier hinzugefügt werden
+    // Formularvalidierung für das Admin-Passwort
+    const adminForm = document.querySelector('form[action^="admin.php"]');
+    if (adminForm && !adminForm.querySelector('input[name="action"]')) { // Nur das Authentifizierungsformular
+        adminForm.addEventListener('submit', function(event) {
+            const adminPassword = document.getElementById('admin-password').value.trim();
 
+            // Überprüfung der Passwortlänge
+            if (adminPassword.length < 6) {
+                event.preventDefault();
+                alert('Das Admin-Passwort muss mindestens 6 Zeichen lang sein.');
+            }
+        });
+    }
 });

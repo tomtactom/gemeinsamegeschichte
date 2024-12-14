@@ -3,6 +3,7 @@
 
 require_once 'inc/db_connect.php';
 require_once 'inc/functions.php';
+session_start();
 
 // Initialisiere Variablen
 $story_id = isset($_GET['story_id']) ? intval($_GET['story_id']) : 0;
@@ -38,18 +39,12 @@ if ($stmt_story = $conn->prepare($sql_story)) {
 
 // Überprüfe die Authentifizierung via Cookie
 $authenticated = false;
-if (isset($_COOKIE['story_auth_' . $story_id])) {
-    $cookie_hash = $_COOKIE['story_auth_' . $story_id];
-    // Vergleiche den Cookie-Hash mit dem Teilnahme-Passwort-Hash
-    if (password_verify($_GET['password'] ?? '', $story['participation_password_hash'])) {
+$cookie_name = 'story_auth_' . $story_id;
+if (isset($_COOKIE[$cookie_name])) {
+    $cookie_token = $_COOKIE[$cookie_name];
+    // Vergleiche den Cookie-Token mit dem Auth-Token in der Datenbank
+    if ($cookie_token === $story['auth_token']) {
         $authenticated = true;
-    } else {
-        // Optional: Weitere Logik zur Cookie-Authentifizierung
-        // Zum Beispiel könnte der Cookie selbst den Passwort-Hash enthalten
-        // Hier wird angenommen, dass der Cookie den Hash enthält
-        // Stelle sicher, dass dies sicher implementiert ist
-        // Für diese Implementierung wird eine neue Authentifizierung benötigt
-        $authenticated = false;
     }
 }
 
@@ -60,10 +55,23 @@ if ($story['is_private'] && !$authenticated && $story['status'] !== 'completed')
         $input_password = trim($_POST['password']);
 
         if (password_verify($input_password, $story['participation_password_hash'])) {
-            // Setze den Cookie mit dem Passwort-Hash, gültig für eine Woche
-            setcookie('story_auth_' . $story_id, $story['participation_password_hash'], time() + (7 * 24 * 60 * 60), "/");
-            header("Location: story.php?story_id=" . $story_id);
-            exit();
+            // Generiere einen eindeutigen Token
+            $auth_token = generateToken(16);
+
+            // Speichere den Token in der Datenbank
+            $sql_update_token = "UPDATE stories SET auth_token = ? WHERE id = ?";
+            if ($stmt_update = $conn->prepare($sql_update_token)) {
+                $stmt_update->bind_param("si", $auth_token, $story_id);
+                $stmt_update->execute();
+                $stmt_update->close();
+
+                // Setze den Cookie mit dem Token, gültig für eine Woche
+                setcookie($cookie_name, $auth_token, time() + (7 * 24 * 60 * 60), "/", "", false, true);
+                header("Location: story.php?story_id=" . $story_id);
+                exit();
+            } else {
+                $error_message = "Ein Fehler ist aufgetreten. Bitte versuchen Sie es später erneut.";
+            }
         } else {
             $error_message = "Falsches Teilnahme-Passwort.";
         }
@@ -91,24 +99,55 @@ if (($story['status'] === 'completed') || (!$story['is_private']) || $authentica
             }
         }
 
-        // Wenn keine Fehler vorhanden sind, füge den Satz zur Datenbank hinzu
+        // Wenn keine Fehler vorhanden sind, füge die Sätze zur Datenbank hinzu
         if (empty($sentence_err)) {
             $sql_insert = "INSERT INTO sentences (story_id, sentence) VALUES (?, ?)";
             if ($stmt_insert = $conn->prepare($sql_insert)) {
-                $stmt_insert->bind_param("is", $param_story_id, $param_sentence);
-                $param_story_id = $story_id;
-                $param_sentence = $sentence;
+                foreach ($sentences as $single_sentence) {
+                    $stmt_insert->bind_param("is", $param_story_id, $param_sentence);
+                    $param_story_id = $story_id;
+                    $param_sentence = $single_sentence . '.'; // Satz mit Punkt versehen
 
-                if ($stmt_insert->execute()) {
-                    // Aktualisiere den Status, falls nötig (z.B. automatisch abschließen, wenn bestimmte Bedingungen erfüllt sind)
+                    if (!$stmt_insert->execute()) {
+                        $error_message = "Ein Fehler ist aufgetreten. Bitte versuchen Sie es später erneut.";
+                        break;
+                    }
+                }
+
+                if (empty($error_message)) {
                     $success_message = "Ihr Beitrag wurde erfolgreich hinzugefügt.";
 
                     // Setze den Cookie neu, um die Gültigkeit zu verlängern
-                    setcookie('story_auth_' . $story_id, $story['participation_password_hash'], time() + (7 * 24 * 60 * 60), "/");
+                    setcookie($cookie_name, $story['auth_token'], time() + (7 * 24 * 60 * 60), "/", "", false, true);
 
-                    // Optional: Überprüfe, ob die Geschichte nun abgeschlossen werden soll
-                } else {
-                    $error_message = "Ein Fehler ist aufgetreten. Bitte versuchen Sie es später erneut.";
+                    // Überprüfe, ob die maximale Anzahl von Sätzen erreicht wurde
+                    if (!is_null($story['max_sentences'])) {
+                        // Zähle die Anzahl der Sätze
+                        $sql_count = "SELECT COUNT(*) as sentence_count FROM sentences WHERE story_id = ?";
+                        if ($stmt_count = $conn->prepare($sql_count)) {
+                            $stmt_count->bind_param("i", $story_id);
+                            $stmt_count->execute();
+                            $result_count = $stmt_count->get_result();
+                            if ($row_count = $result_count->fetch_assoc()) {
+                                $current_count = intval($row_count['sentence_count']);
+                                if ($current_count >= intval($story['max_sentences'])) {
+                                    // Markiere die Geschichte als abgeschlossen
+                                    $sql_complete = "UPDATE stories SET status = 'completed' WHERE id = ?";
+                                    if ($stmt_complete = $conn->prepare($sql_complete)) {
+                                        $stmt_complete->bind_param("i", $story_id);
+                                        $stmt_complete->execute();
+                                        $stmt_complete->close();
+
+                                        // Analysiere die Geschichte und setze ein Hintergrundbild
+                                        analyze_and_set_background($conn, $story_id);
+
+                                        $success_message .= " Die Geschichte wurde automatisch als abgeschlossen markiert.";
+                                    }
+                                }
+                            }
+                            $stmt_count->close();
+                        }
+                    }
                 }
 
                 $stmt_insert->close();
@@ -159,6 +198,22 @@ $conn->close();
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Eigene CSS-Datei -->
     <link rel="stylesheet" href="css/styles.css">
+    <style>
+        <?php if ($story['status'] === 'completed' && !empty($story['background_image_url'])): ?>
+            body {
+                background-image: url('<?php echo escape($story['background_image_url']); ?>');
+                background-size: cover;
+                background-repeat: no-repeat;
+                background-attachment: fixed;
+                background-position: center;
+            }
+            .container {
+                background-color: rgba(255, 255, 255, 0.8);
+                padding: 2rem;
+                border-radius: 8px;
+            }
+        <?php endif; ?>
+    </style>
 </head>
 <body>
     <!-- Navigation Bar -->
@@ -182,7 +237,7 @@ $conn->close();
                 <p>
                     <?php 
                     foreach ($all_sentences as $s) {
-                        echo escape($s) . ". ";
+                        echo escape($s) . " ";
                     }
                     ?>
                 </p>
@@ -212,7 +267,7 @@ $conn->close();
                 <?php if (!empty($last_sentence)): ?>
                     <div class="mb-4">
                         <h5>Letzter Satz:</h5>
-                        <p><?php echo escape($last_sentence); ?>.</p>
+                        <p><?php echo escape($last_sentence); ?></p>
                     </div>
                 <?php else: ?>
                     <div class="mb-4">
