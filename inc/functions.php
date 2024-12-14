@@ -17,7 +17,7 @@ function generateToken($length = 32) {
 
 /**
  * Analysiert die Geschichte und setzt ein Hintergrundbild
- * (Diese Funktion kann in `admin.php` aufgerufen werden)
+ * (Diese Funktion wird in admin.php und story.php aufgerufen)
  */
 function analyze_and_set_background($conn, $story_id) {
     // Abfrage aller Sätze der Geschichte
@@ -52,15 +52,12 @@ function analyze_and_set_background($conn, $story_id) {
     // Nimm die Top 3 häufigsten Wörter
     $top_words = array_slice(array_keys($word_counts), 0, 3);
 
-    // Pixabay API Schlüssel (ersetze 'DEIN_PIXABAY_API_SCHLÜSSEL' mit deinem tatsächlichen Schlüssel)
-    $pixabay_api_key = '7735325-27d050c2608a3265626df0d91';
-
     // Funktion zur Suche nach einem Bild basierend auf einem Wort
     function search_pixabay_image($word, $api_key) {
         $query = urlencode($word);
         $url = "https://pixabay.com/api/?key={$api_key}&q={$query}&image_type=photo&per_page=3&safesearch=true";
 
-        $response = file_get_contents($url);
+        $response = @file_get_contents($url);
         if ($response === FALSE) {
             return NULL;
         }

@@ -86,35 +86,20 @@ if (($story['status'] === 'completed') || (!$story['is_private']) || $authentica
 
         // Validierung
         if (empty($sentence)) {
-            $sentence_err = "Bitte geben Sie mindestens einen Satz ein.";
+            $sentence_err = "Bitte geben Sie einen Satz ein.";
         } elseif (strlen($sentence) > 300) {
             $sentence_err = "Die maximale Zeichenanzahl beträgt 300.";
-        } else {
-            // Überprüfe, ob zwei Sätze durch einen Punkt getrennt sind
-            $sentences = explode('.', $sentence);
-            $sentences = array_filter(array_map('trim', $sentences));
-
-            if (count($sentences) != 2) {
-                $sentence_err = "Bitte geben Sie genau zwei Sätze ein, getrennt durch einen Punkt.";
-            }
         }
 
-        // Wenn keine Fehler vorhanden sind, füge die Sätze zur Datenbank hinzu
+        // Wenn keine Fehler vorhanden sind, füge den Satz zur Datenbank hinzu
         if (empty($sentence_err)) {
             $sql_insert = "INSERT INTO sentences (story_id, sentence) VALUES (?, ?)";
             if ($stmt_insert = $conn->prepare($sql_insert)) {
-                foreach ($sentences as $single_sentence) {
-                    $stmt_insert->bind_param("is", $param_story_id, $param_sentence);
-                    $param_story_id = $story_id;
-                    $param_sentence = $single_sentence . '.'; // Satz mit Punkt versehen
+                $stmt_insert->bind_param("is", $param_story_id, $param_sentence);
+                $param_story_id = $story_id;
+                $param_sentence = $sentence . '.'; // Satz mit Punkt versehen
 
-                    if (!$stmt_insert->execute()) {
-                        $error_message = "Ein Fehler ist aufgetreten. Bitte versuchen Sie es später erneut.";
-                        break;
-                    }
-                }
-
-                if (empty($error_message)) {
+                if ($stmt_insert->execute()) {
                     $success_message = "Ihr Beitrag wurde erfolgreich hinzugefügt.";
 
                     // Setze den Cookie neu, um die Gültigkeit zu verlängern
@@ -148,6 +133,8 @@ if (($story['status'] === 'completed') || (!$story['is_private']) || $authentica
                             $stmt_count->close();
                         }
                     }
+                } else {
+                    $error_message = "Ein Fehler ist aufgetreten. Bitte versuchen Sie es später erneut.";
                 }
 
                 $stmt_insert->close();
@@ -295,7 +282,7 @@ $conn->close();
                         <div class="mb-3">
                             <label for="sentence-input" class="form-label">Neuen Satz hinzufügen</label>
                             <textarea class="form-control" id="sentence-input" name="sentence" rows="3" maxlength="300" required></textarea>
-                            <div class="form-text">Bitte geben Sie genau zwei Sätze ein, getrennt durch einen Punkt. Maximal 300 Zeichen.</div>
+                            <div class="form-text">Bitte geben Sie einen Satz ein. Maximal 300 Zeichen.</div>
                         </div>
                         <button type="submit" class="btn btn-primary">Hinzufügen</button>
                     </form>
