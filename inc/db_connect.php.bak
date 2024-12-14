@@ -1,0 +1,16 @@
+<?php
+// inc/db_connect.php
+
+$servername = "localhost";
+$username = "dein_db_benutzername";
+$password = "dein_db_passwort";
+$dbname = "deine_datenbank";
+
+// Create connection
+$conn = new mysqli($servername, $username, $password, $dbname);
+
+// Check connection
+if ($conn->connect_error) {
+    die("Verbindung fehlgeschlagen: " . $conn->connect_error);
+}
+?>
