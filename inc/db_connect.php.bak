@@ -6,6 +6,9 @@ $username = "dein_db_benutzername";
 $password = "dein_db_passwort";
 $dbname = "deine_datenbank";
 
+// Pixabay API Schlüssel (ersetze 'DEIN_PIXABAY_API_SCHLÜSSEL' mit deinem tatsächlichen Schlüssel)
+    $pixabay_api_key = '';
+
 // Create connection
 $conn = new mysqli($servername, $username, $password, $dbname);
 

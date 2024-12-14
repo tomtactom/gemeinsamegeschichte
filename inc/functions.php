@@ -53,7 +53,7 @@ function analyze_and_set_background($conn, $story_id) {
     $top_words = array_slice(array_keys($word_counts), 0, 3);
 
     // Pixabay API Schlüssel (ersetze 'DEIN_PIXABAY_API_SCHLÜSSEL' mit deinem tatsächlichen Schlüssel)
-    $pixabay_api_key = 'DEIN_PIXABAY_API_SCHLÜSSEL';
+    $pixabay_api_key = '7735325-27d050c2608a3265626df0d91';
 
     // Funktion zur Suche nach einem Bild basierend auf einem Wort
     function search_pixabay_image($word, $api_key) {
