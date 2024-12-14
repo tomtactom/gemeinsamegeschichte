@@ -1,0 +1,164 @@
+/* css/styles.css */
+
+/* Grundlegende Farbdefinitionen */
+:root {
+    --primary-color: #4A90E2; /* Primärfarbe: Blau */
+    --secondary-color: #50E3C2; /* Sekundärfarbe: Türkis */
+    --text-color: #333333; /* Dunkelgrau für Texte */
+    --background-color: #f9f9f9; /* Helles Grau für Hintergrund */
+    --badge-ongoing: #f0ad4e; /* Orange für laufende Geschichten */
+    --badge-completed: #5cb85c; /* Grün für abgeschlossene Geschichten */
+    --badge-locked: #6c757d; /* Grau für gesperrte Geschichten */
+    --badge-private: #d9534f; /* Rot für private Geschichten */
+    --badge-public: #5bc0de; /* Blau für öffentliche Geschichten */
+}
+
+/* Anwendung der Primär- und Sekundärfarben */
+body {
+    background-color: var(--background-color);
+    color: var(--text-color);
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+.navbar {
+    background-color: var(--primary-color) !important;
+}
+
+.navbar-brand, .navbar-nav .nav-link {
+    color: #ffffff !important;
+}
+
+.btn-primary {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.btn-primary:hover {
+    background-color: darken(var(--primary-color), 10%);
+    border-color: darken(var(--primary-color), 10%);
+}
+
+.btn-secondary {
+    background-color: var(--secondary-color);
+    border-color: var(--secondary-color);
+}
+
+.btn-secondary:hover {
+    background-color: darken(var(--secondary-color), 10%);
+    border-color: darken(var(--secondary-color), 10%);
+}
+
+/* Anpassung der Tabellen */
+.table-primary th {
+    background-color: var(--primary-color);
+    color: #ffffff;
+}
+
+.table tbody tr:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+/* Badges für Statusanzeige */
+.badge.bg-warning.text-dark {
+    background-color: var(--badge-ongoing) !important;
+}
+
+.badge.bg-success {
+    background-color: var(--badge-completed) !important;
+}
+
+.badge.bg-secondary {
+    background-color: var(--badge-locked) !important;
+}
+
+.badge.bg-danger {
+    background-color: var(--badge-private) !important;
+}
+
+.badge.bg-info.text-dark {
+    background-color: var(--badge-public) !important;
+}
+
+/* Anpassung der Überschrift */
+h1 {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    color: var(--primary-color);
+}
+
+/* Button-Stile */
+.btn-success {
+    background-color: var(--secondary-color);
+    border-color: var(--secondary-color);
+}
+
+.btn-success:hover {
+    background-color: darken(var(--secondary-color), 10%);
+    border-color: darken(var(--secondary-color), 10%);
+}
+
+/* Stil für abgeschlossene Geschichten als Buchkapitel */
+.completed-story {
+    background-color: #ffffff;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    line-height: 1.6;
+    font-family: 'Georgia', serif;
+    margin-bottom: 2rem;
+}
+
+.completed-story h2 {
+    color: var(--primary-color);
+    margin-bottom: 1.5rem;
+}
+
+/* Responsive Anpassungen */
+@media (max-width: 768px) {
+    h1 {
+        font-size: 2rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .navbar-brand {
+        font-size: 1.25rem;
+    }
+
+    .btn {
+        font-size: 0.9rem;
+        padding: 0.5rem 1rem;
+    }
+}
+
+/* Formular-Stile */
+form .form-control {
+    border-radius: 4px;
+    border: 1px solid #ced4da;
+}
+
+form .form-label {
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+/* Footer-Stile */
+footer {
+    background-color: var(--primary-color);
+    color: #ffffff;
+    padding: 1rem 0;
+    text-align: center;
+    position: fixed;
+    width: 100%;
+    bottom: 0;
+}
+
+footer a {
+    color: #ffffff;
+    text-decoration: underline;
+}
+
+footer a:hover {
+    color: #d1e7ff;
+    text-decoration: none;
+}
